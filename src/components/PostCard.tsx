@@ -4,9 +4,9 @@ import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
-import client from "../../utils/apolloClient";
-import { ADD_POST, ADD_SUBREDDIT } from "../../utils/graphql/mutations";
-import { GET_SUBREDDIT_BY_TOPIC } from "../../utils/graphql/queries";
+import client from "../utils/apolloClient";
+import { ADD_POST, ADD_SUBREDDIT } from "../utils/graphql/mutations";
+import { GET_SUBREDDIT_BY_TOPIC } from "../utils/graphql/queries";
 import Avatar from "./Avatar";
 
 interface Inputs {
