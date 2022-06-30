@@ -3,6 +3,7 @@ import { LinkIcon, PhotographIcon } from "@heroicons/react/outline";
 import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
+import toast from "react-hot-toast";
 import client from "../../utils/apolloClient";
 import { ADD_POST, ADD_SUBREDDIT } from "../../utils/graphql/mutations";
 import { GET_SUBREDDIT_BY_TOPIC } from "../../utils/graphql/queries";
@@ -30,11 +31,9 @@ const PostCard: React.FC = () => {
   } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log(data);
+    const notification = toast.loading("Creating post...");
 
     const image = data.postImage || "";
-
-    console.log(client);
 
     try {
       const { data: getSubredditListByTopic } = await client.query({
@@ -86,6 +85,10 @@ const PostCard: React.FC = () => {
         });
         console.log("New Post added", newPost);
 
+        toast.success("Post created!", {
+          id: notification,
+        });
+
         setValue("postBody", "");
         setValue("postTitle", "");
         setValue("postImage", "");
@@ -93,6 +96,9 @@ const PostCard: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
+      toast.error("Whoops! Something went wrong.", {
+        id: notification,
+      });
     }
 
     console.log("form state", errors);
