@@ -1,7 +1,11 @@
+import { useMutation } from "@apollo/client";
 import { LinkIcon, PhotographIcon } from "@heroicons/react/outline";
 import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
+import client from "../../utils/apolloClient";
+import { ADD_POST, ADD_SUBREDDIT } from "../../utils/graphql/mutations";
+import { GET_SUBREDDIT_BY_TOPIC } from "../../utils/graphql/queries";
 import Avatar from "./Avatar";
 
 interface Inputs {
@@ -13,14 +17,86 @@ interface Inputs {
 
 const PostCard: React.FC = () => {
   const [imageBoxOpen, setImageBoxOpen] = useState(false);
+  const [addPost] = useMutation(ADD_POST);
+  const [addSubreddit] = useMutation(ADD_SUBREDDIT);
+
   const { data: session } = useSession();
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<Inputs>();
-  const onSubmit: SubmitHandler<Inputs> = async (data) => console.log(data);
+
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    console.log(data);
+
+    const image = data.postImage || "";
+
+    console.log(client);
+
+    try {
+      const { data: getSubredditListByTopic } = await client.query({
+        query: GET_SUBREDDIT_BY_TOPIC,
+        variables: { topic: data.subreddit },
+      });
+
+      const subredditExists = getSubredditListByTopic.length > 0;
+
+      console.log("subredditExists", subredditExists);
+
+      if (!subredditExists) {
+        const {
+          data: { insertSubreddit: newSubreddit },
+        } = await addSubreddit({
+          variables: {
+            topic: data.subreddit,
+          },
+        });
+
+        console.log("added new subreddit", data);
+
+        const {
+          data: { insertPost: newPost },
+        } = await addPost({
+          variables: {
+            body: data.postBody,
+            image,
+            subreddit_id: newSubreddit.id,
+            title: data.postTitle,
+            username: session?.user?.name,
+          },
+        });
+
+        console.log("New Post added", newPost);
+      } else {
+        console.log("using existing subreddit");
+
+        const {
+          data: { insertPost: newPost },
+        } = await addPost({
+          variables: {
+            body: data.postBody,
+            image,
+            subreddit_id: getSubredditListByTopic[0].id,
+            title: data.postTitle,
+            username: session?.user?.name,
+          },
+        });
+        console.log("New Post added", newPost);
+
+        setValue("postBody", "");
+        setValue("postTitle", "");
+        setValue("postImage", "");
+        setValue("subreddit", "");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    console.log("form state", errors);
+  };
 
   return (
     <form
@@ -84,7 +160,7 @@ const PostCard: React.FC = () => {
           )}
 
           {Object.keys(errors).length > 0 && (
-            <div>
+            <div className="text-red-800 px-[10%]">
               {errors.postTitle?.type === "required" && (
                 <p>- Post Title is required</p>
               )}
