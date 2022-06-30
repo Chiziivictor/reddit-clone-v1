@@ -11,8 +11,6 @@ const Home: NextPage = () => {
         <title>Reddit Clone</title>
         <meta name="description" content="Reddit clone by @chiziivictor" />
       </Head>
-
-      <Header />
     </div>
   );
 };
